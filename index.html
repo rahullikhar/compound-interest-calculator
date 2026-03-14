@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Compound Interest Calculator</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Segoe UI', sans-serif; background: #f5f7fa; color: #333; min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 20px; }
+    .card { background: white; border-radius: 16px; padding: 32px; max-width: 520px; width: 100%; box-shadow: 0 4px 24px rgba(0,0,0,0.08); }
+    h1 { font-size: 22px; font-weight: 600; margin-bottom: 6px; color: #1a1a2e; }
+    p.sub { font-size: 13px; color: #888; margin-bottom: 28px; }
+    .slider-group { margin-bottom: 20px; }
+    .slider-group label { font-size: 13px; color: #555; display: flex; justify-content: space-between; margin-bottom: 6px; }
+    .slider-group label span { font-weight: 600; color: #1a1a2e; }
+    input[type=range] { width: 100%; accent-color: #4f46e5; }
+    select { width: 100%; padding: 8px 12px; border: 1px solid #e0e0e0; border-radius: 8px; font-size: 13px; color: #333; margin-top: 4px; }
+    .results { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin: 24px 0; }
+    .result-box { background: #f5f7fa; border-radius: 10px; padding: 14px 10px; text-align: center; }
+    .result-box .label { font-size: 11px; color: #888; margin-bottom: 6px; }
+    .result-box .value { font-size: 16px; font-weight: 600; color: #1a1a2e; }
+    .result-box .value.green { color: #059669; }
+    .chart-wrap { position: relative; height: 220px; }
+  </style>
+</head>
+<body>
+<div class="card">
+  <h1>Compound Interest Calculator</h1>
+  <p class="sub">See how your money grows over time</p>
+
+  <div class="slider-group">
+    <label>Principal Amount <span id="p-out">₹1,00,000</span></label>
+    <input type="range" id="principal" min="1000" max="500000" step="1000" value="100000" oninput="update()">
+  </div>
+  <div class="slider-group">
+    <label>Annual Interest Rate <span id="r-out">8%</span></label>
+    <input type="range" id="rate" min="1" max="20" step="0.5" value="8" oninput="update()">
+  </div>
+  <div class="slider-group">
+    <label>Time Period <span id="t-out">20 years</span></label>
+    <input type="range" id="years" min="1" max="40" step="1" value="20" oninput="update()">
+  </div>
+  <div class="slider-group">
+    <label>Compounding Frequency</label>
+    <select id="freq" onchange="update()">
+      <option value="1">Yearly</option>
+      <option value="4">Quarterly</option>
+      <option value="12" selected>Monthly</option>
+      <option value="365">Daily</option>
+    </select>
+  </div>
+
+  <div class="results">
+    <div class="result-box"><div class="label">Principal</div><div class="value" id="s-p">₹1,00,000</div></div>
+    <div class="result-box"><div class="label">Interest Earned</div><div class="value green" id="s-i">₹0</div></div>
+    <div class="result-box"><div class="label">Final Value</div><div class="value" id="s-t">₹0</div></div>
+  </div>
+
+  <div class="chart-wrap">
+    <canvas id="chart"></canvas>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<script>
+  function fmt(n) {
+    if (n >= 10000000) return '₹' + (n/10000000).toFixed(2) + ' Cr';
+    if (n >= 100000) return '₹' + (n/100000).toFixed(2) + ' L';
+    return '₹' + Math.round(n).toLocaleString('en-IN');
+  }
+
+  const chart = new Chart(document.getElementById('chart'), {
+    type: 'bar',
+    data: { labels: [], datasets: [
+      { label: 'Principal', data: [], backgroundColor: '#4f46e5', stack: 'a' },
+      { label: 'Interest', data: [], backgroundColor: '#059669', stack: 'a' }
+    ]},
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { position: 'bottom' } },
+      scales: {
+        x: { stacked: true, grid: { display: false } },
+        y: { stacked: true, ticks: { callback: v => fmt(v) } }
+      }
+    }
+  });
+
+  function update() {
+    const P = +document.getElementById('principal').value;
+    const r = +document.getElementById('rate').value;
+    const n = +document.getElementById('freq').value;
+    const y = +document.getElementById('years').value;
+
+    document.getElementById('p-out').textContent = fmt(P);
+    document.getElementById('r-out').textContent = r + '%';
+    document.getElementById('t-out').textContent = y + ' years';
+
+    const A = P * Math.pow(1 + r/(n*100), n*y);
+    document.getElementById('s-p').textContent = fmt(P);
+    document.getElementById('s-i').textContent = fmt(A - P);
+    document.getElementById('s-t').textContent = fmt(A);
+
+    const labels = [], principal = [], interest = [];
+    for (let i = 0; i <= y; i += Math.max(1, Math.floor(y/10))) {
+      const val = P * Math.pow(1 + r/(n*100), n*i);
+      labels.push('Yr ' + i);
+      principal.push(Math.round(P));
+      interest.push(Math.round(val - P));
+    }
+    chart.data.labels = labels;
+    chart.data.datasets[0].data = principal;
+    chart.data.datasets[1].data = interest;
+    chart.update('none');
+  }
+
+  update();
+</script>
+</body>
+</html>
